@@ -7,31 +7,48 @@ import { appointmentService } from '../services/appointmentService';
 import { adminService } from '../services/adminService';
 import { staffService } from '../services/staffService';
 import { dealService } from '../services/dealService';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatDate } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart3, Package, Users, DollarSign, Plus,
   Edit, Trash2, AlertTriangle, Eye,
   Search, X, RefreshCw, TrendingUp,
-  Filter, Crown, Award, Stethoscope, Phone, LogOut
+  Filter, Crown, Award, Stethoscope, Phone, LogOut,
+  Calendar, Mail, UserPlus
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('staff-analytics'); // 'staff-analytics' | 'inventory' | 'leads' | 'deals' | 'financials'
+  const [activeTab, setActiveTab] = useState('staff-management'); // 'staff-management' | 'staff-analytics' | 'inventory' | 'leads' | 'deals' | 'financials'
   const [products, setProducts] = useState([]);
   const [deals, setDeals] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [staffPerformance, setStaffPerformance] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [staffSearchQuery, setStaffSearchQuery] = useState('');
 
-  // Modals
+  // Modals & Feedback
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [staffSuccessMsg, setStaffSuccessMsg] = useState('');
+  const [staffFormError, setStaffFormError] = useState('');
+
+  const [staffForm, setStaffForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'Senior Optometrist & Style Lead',
+    storeLocation: 'Lumina Flagship — 5th Avenue, New York',
+    joinedDate: new Date().toISOString().split('T')[0],
+    avatar: ''
+  });
+
   const [productForm, setProductForm] = useState({
     name: '',
     brand: 'Lumina',
@@ -54,13 +71,82 @@ export const AdminDashboard = () => {
     const stats = await adminService.getAnalytics();
     const allDeals = await dealService.getDeals();
     const staffData = await staffService.getStaffPerformanceAnalytics();
+    const staffList = await staffService.getStaffMembers();
     
     setProducts(p);
     setAppointments(a);
     setAnalytics(stats);
     setDeals(allDeals);
     setStaffPerformance(staffData);
+    setStaffMembers(staffList);
   };
+
+  // Staff CRUD Handlers
+  const handleOpenAddStaff = () => {
+    setStaffForm({
+      name: '',
+      email: '',
+      phone: '',
+      role: 'Senior Optometrist & Style Lead',
+      storeLocation: 'Lumina Flagship — 5th Avenue, New York',
+      joinedDate: new Date().toISOString().split('T')[0],
+      avatar: ''
+    });
+    setStaffFormError('');
+    setIsStaffModalOpen(true);
+  };
+
+  const handleSaveStaff = async (e) => {
+    e.preventDefault();
+    if (!staffForm.name.trim() || !staffForm.email.trim()) {
+      setStaffFormError('Please provide both Staff Name and Email address.');
+      return;
+    }
+    if (!staffForm.email.includes('@')) {
+      setStaffFormError('Please enter a valid email address.');
+      return;
+    }
+
+    const defaultAvatars = [
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80'
+    ];
+    const fallbackAvatar = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+
+    await staffService.addStaffMember({
+      name: staffForm.name.trim(),
+      email: staffForm.email.trim().toLowerCase(),
+      phone: staffForm.phone.trim() || '+1 (555) 100-2020',
+      role: staffForm.role,
+      storeLocation: staffForm.storeLocation,
+      joinedDate: staffForm.joinedDate || new Date().toISOString().split('T')[0],
+      avatar: staffForm.avatar.trim() || fallbackAvatar
+    });
+
+    setIsStaffModalOpen(false);
+    setStaffSuccessMsg(`Staff member ${staffForm.name} successfully added! Credentials active.`);
+    setTimeout(() => setStaffSuccessMsg(''), 4000);
+    await loadData();
+  };
+
+  const handleDeleteStaff = async (staffId, staffName) => {
+    if (window.confirm(`Are you sure you want to remove ${staffName} from the staff directory? This action cannot be undone.`)) {
+      await staffService.removeStaffMember(staffId);
+      setStaffSuccessMsg(`Staff member ${staffName} has been removed.`);
+      setTimeout(() => setStaffSuccessMsg(''), 4000);
+      await loadData();
+    }
+  };
+
+  const filteredStaff = staffMembers.filter(s =>
+    (s.name || '').toLowerCase().includes(staffSearchQuery.toLowerCase()) ||
+    (s.email || '').toLowerCase().includes(staffSearchQuery.toLowerCase()) ||
+    (s.role || '').toLowerCase().includes(staffSearchQuery.toLowerCase()) ||
+    (s.storeLocation || '').toLowerCase().includes(staffSearchQuery.toLowerCase())
+  );
 
   // Product CRUD Handlers
   const handleOpenCreate = () => {
@@ -158,8 +244,11 @@ export const AdminDashboard = () => {
             <GlassButton size="sm" variant="secondary" onClick={loadData}>
               <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh Telemetry
             </GlassButton>
-            <GlassButton size="sm" variant="primary" onClick={handleOpenCreate}>
-              <Plus className="w-4 h-4 mr-1" /> Add New Frame
+            <GlassButton size="sm" variant="primary" onClick={handleOpenAddStaff}>
+              <UserPlus className="w-4 h-4 mr-1" /> + Add Staff
+            </GlassButton>
+            <GlassButton size="sm" variant="outline" onClick={handleOpenCreate}>
+              <Plus className="w-4 h-4 mr-1" /> Add Frame
             </GlassButton>
             <GlassButton size="sm" variant="outline" onClick={async () => { await logout(); navigate('/login'); }}>
               <LogOut className="w-4 h-4 mr-1" /> Sign Out
@@ -197,7 +286,7 @@ export const AdminDashboard = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="font-display font-black text-3xl text-slate-900">
-              {staffPerformance.length || 3}
+              {staffMembers.length || 3}
             </span>
             <span className="text-xs font-bold text-orange-700 font-mono">Optometrists on Duty</span>
           </div>
@@ -242,6 +331,7 @@ export const AdminDashboard = () => {
       {/* Tabs Bar */}
       <div className="flex items-center gap-2 border-b border-slate-200/80 pb-4 overflow-x-auto">
         {[
+          { id: 'staff-management', label: 'Staff Management', icon: Users },
           { id: 'staff-analytics', label: 'Staff Performance & Deal Analytics', icon: Award },
           { id: 'inventory', label: 'Inventory & Pricing Management', icon: Package },
           { id: 'leads', label: 'All Eye Test Bookings & Leads', icon: Phone },
@@ -262,7 +352,165 @@ export const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* ─── TAB 1: STAFF PERFORMANCE & DEAL ANALYTICS ─── */}
+      {/* ─── TAB 1: STAFF MANAGEMENT (STAFF DIRECTORY & CRUD) ─── */}
+      {activeTab === 'staff-management' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display font-black text-xl text-slate-900">
+                Staff & Employee Directory
+              </h3>
+              <p className="text-xs text-slate-600 font-medium">
+                Manage optometry staff, roles, and store credentials. Add new team members dynamically or remove them with instant synchronization.
+              </p>
+            </div>
+            <GlassButton size="sm" variant="primary" onClick={handleOpenAddStaff} className="shadow-glass-glow">
+              <UserPlus className="w-4 h-4 mr-1.5" /> + Add New Staff
+            </GlassButton>
+          </div>
+
+          {staffSuccessMsg && (
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center justify-between animate-fade-in shadow-xs">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                {staffSuccessMsg}
+              </span>
+              <button onClick={() => setStaffSuccessMsg('')} className="p-1 text-emerald-600 hover:text-emerald-900 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Search & Filter Bar */}
+          <GlassCard className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border border-white bg-white/85 shadow-sm">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search staff by name, email, or role..."
+                value={staffSearchQuery}
+                onChange={e => setStaffSearchQuery(e.target.value)}
+                className="glass-input pl-9 pr-4 py-2.5 rounded-xl text-xs w-full font-medium"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              <span className="text-xs font-bold text-slate-600">
+                Active Staff: <span className="font-mono text-slate-900 font-black">{filteredStaff.length}</span> / {staffMembers.length}
+              </span>
+              {staffSearchQuery && (
+                <button
+                  onClick={() => setStaffSearchQuery('')}
+                  className="text-xs font-bold text-sky-700 hover:text-sky-900 hover:underline cursor-pointer"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
+          </GlassCard>
+
+          {/* Staff List Table */}
+          <GlassCard className="p-0 overflow-hidden border border-white bg-white/85 shadow-glass-card">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse font-sans">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-100/90 text-slate-700 uppercase font-bold tracking-wider">
+                    <th className="py-4 px-5">Staff Member</th>
+                    <th className="py-4 px-5">Email Address</th>
+                    <th className="py-4 px-5">Role / Position</th>
+                    <th className="py-4 px-5">Store Location</th>
+                    <th className="py-4 px-5">Joined Date</th>
+                    <th className="py-4 px-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredStaff.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="py-12 text-center text-slate-500 font-medium">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Users className="w-8 h-8 text-slate-300" />
+                          <p className="text-sm font-bold text-slate-700">No staff members found</p>
+                          <p className="text-xs text-slate-500">
+                            {staffSearchQuery ? `No results match "${staffSearchQuery}"` : 'Get started by adding your first team member'}
+                          </p>
+                          {staffSearchQuery ? (
+                            <GlassButton size="xs" variant="secondary" onClick={() => setStaffSearchQuery('')} className="mt-2">
+                              Reset Filter
+                            </GlassButton>
+                          ) : (
+                            <GlassButton size="sm" variant="primary" onClick={handleOpenAddStaff} className="mt-2">
+                              <UserPlus className="w-4 h-4 mr-1" /> + Add Staff Member
+                            </GlassButton>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStaff.map((member) => (
+                      <tr key={member.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="py-4 px-5 flex items-center gap-3">
+                          <img
+                            src={member.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+                            alt={member.name}
+                            className="w-11 h-11 object-cover rounded-xl border border-amber-300 shadow-xs shrink-0"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-900 text-sm block">{member.name}</span>
+                            <span className="text-xs text-slate-500 font-medium font-mono">{member.phone || '+1 (555) 000-0000'}</span>
+                          </div>
+                        </td>
+
+                        <td className="py-4 px-5">
+                          <a
+                            href={`mailto:${member.email}`}
+                            className="font-mono text-sky-700 hover:text-sky-900 font-bold hover:underline inline-flex items-center gap-1.5"
+                          >
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                            {member.email}
+                          </a>
+                        </td>
+
+                        <td className="py-4 px-5">
+                          <GlassBadge variant={
+                            member.role?.toLowerCase().includes('senior') || member.role?.toLowerCase().includes('lead') ? 'gold' :
+                            member.role?.toLowerCase().includes('refraction') || member.role?.toLowerCase().includes('optometrist') ? 'sky' : 'peach'
+                          }>
+                            {member.role || 'Staff Member'}
+                          </GlassBadge>
+                        </td>
+
+                        <td className="py-4 px-5 text-slate-700 font-medium max-w-[220px] truncate">
+                          {member.storeLocation || 'Lumina Flagship — 5th Avenue, New York'}
+                        </td>
+
+                        <td className="py-4 px-5 text-slate-700 font-mono font-medium">
+                          <div className="flex items-center gap-1.5 text-slate-700">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            {formatDate(member.joinedDate || '2024-03-15')}
+                          </div>
+                        </td>
+
+                        <td className="py-4 px-5 text-right">
+                          <button
+                            onClick={() => handleDeleteStaff(member.id, member.name)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 transition-all cursor-pointer shadow-xs active:scale-95"
+                            title={`Delete ${member.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete / Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* ─── TAB 2: STAFF PERFORMANCE & DEAL ANALYTICS ─── */}
       {activeTab === 'staff-analytics' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -451,52 +699,118 @@ export const AdminDashboard = () => {
       )}
 
       {/* ─── TAB 3: ALL EYE TEST BOOKINGS & LEADS ─── */}
-      {activeTab === 'leads' && (
-        <div className="space-y-6">
-          <GlassCard className="p-0 overflow-hidden border border-white bg-white/85 shadow-glass-card">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse font-sans">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-100/90 text-slate-700 uppercase font-bold tracking-wider">
-                    <th className="py-4 px-5">Lead ID</th>
-                    <th className="py-4 px-5">Customer Name & Phone</th>
-                    <th className="py-4 px-5">Appointment Slot</th>
-                    <th className="py-4 px-5">Store Location</th>
-                    <th className="py-4 px-5">Attributed Optometrist</th>
-                    <th className="py-4 px-5 text-right">Call Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {appointments.map((apt) => (
-                    <tr key={apt.id} className="hover:bg-sky-50/40 transition-colors">
-                      <td className="py-4 px-5 font-mono font-bold text-sky-700 text-xs">{apt.id}</td>
-                      <td className="py-4 px-5">
-                        <span className="font-bold text-slate-900 text-sm block">{apt.customerName}</span>
-                        <span className="text-xs text-slate-500 font-mono">{apt.phone}</span>
-                      </td>
-                      <td className="py-4 px-5">
-                        <span className="font-bold text-slate-900 block">📅 {apt.date}</span>
-                        <span className="text-xs text-slate-500 font-mono">🕒 {apt.time}</span>
-                      </td>
-                      <td className="py-4 px-5 text-slate-700 font-medium max-w-[220px] truncate">{apt.storeLocation || '5th Ave New York'}</td>
-                      <td className="py-4 px-5 font-bold text-slate-900">{apt.optometrist}</td>
-                      <td className="py-4 px-5 text-right">
-                        <GlassBadge variant={
-                          apt.callStatus === 'Visited' ? 'emerald' :
-                          apt.callStatus === 'Confirmed' ? 'sky' :
-                          apt.callStatus === 'Deal Closed' ? 'gold' : 'peach'
-                        }>
-                          {apt.callStatus || 'Pending'}
-                        </GlassBadge>
-                      </td>
+      {activeTab === 'leads' && (() => {
+        // Helper: compute days remaining from a date string (YYYY-MM-DD or similar)
+        const getDaysRemaining = (dateStr, status) => {
+          if (status === 'COMPLETED' || status === 'Visited' || status === 'Deal Closed') return null;
+          if (!dateStr) return null;
+          const today = new Date(); today.setHours(0,0,0,0);
+          const apptDate = new Date(dateStr); apptDate.setHours(0,0,0,0);
+          const diff = Math.round((apptDate - today) / (1000 * 60 * 60 * 24));
+          return diff;
+        };
+
+        const renderDaysBadge = (diff) => {
+          if (diff === null) return null;
+          if (diff > 0) return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:9999,fontSize:10,fontWeight:700,background:'#e0f2fe',color:'#0369a1',marginTop:4}}>In {diff} day{diff>1?'s':''}</span>;
+          if (diff === 0) return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:9999,fontSize:10,fontWeight:700,background:'#fef9c3',color:'#92400e',marginTop:4}}>Today</span>;
+          return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:9999,fontSize:10,fontWeight:700,background:'#fee2e2',color:'#991b1b',marginTop:4}}>Overdue</span>;
+        };
+
+        const statusStyles = {
+          PENDING:   { bg:'#fef3c7', color:'#92400e', border:'#fde68a' },
+          CONFIRMED: { bg:'#dbeafe', color:'#1e40af', border:'#bfdbfe' },
+          COMPLETED: { bg:'#d1fae5', color:'#065f46', border:'#a7f3d0' },
+          CANCELLED: { bg:'#fee2e2', color:'#991b1b', border:'#fecaca' },
+        };
+
+        const normaliseStatus = (s) => {
+          if (!s) return 'PENDING';
+          const up = s.toUpperCase();
+          if (up === 'VISITED' || up === 'DEAL CLOSED' || up === 'COMPLETED') return 'COMPLETED';
+          if (up === 'CONFIRMED') return 'CONFIRMED';
+          if (up === 'CANCELLED') return 'CANCELLED';
+          return 'PENDING';
+        };
+
+        const handleStatusChange = async (aptId, newStatus) => {
+          await appointmentService.updateCallStatus(aptId, newStatus);
+          const refreshed = await appointmentService.getAppointments();
+          setAppointments(refreshed);
+        };
+
+        return (
+          <div className="space-y-6">
+            <GlassCard className="p-0 overflow-hidden border border-white bg-white/85 shadow-glass-card">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse font-sans">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-100/90 text-slate-700 uppercase font-bold tracking-wider">
+                      <th className="py-4 px-5">Lead ID</th>
+                      <th className="py-4 px-5">Customer Name & Phone</th>
+                      <th className="py-4 px-5">Appointment Slot</th>
+                      <th className="py-4 px-5">Store Location</th>
+                      <th className="py-4 px-5">Attributed Optometrist</th>
+                      <th className="py-4 px-5 text-center">Call Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </GlassCard>
-        </div>
-      )}
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {appointments.map((apt) => {
+                      const normStatus = normaliseStatus(apt.callStatus);
+                      const diff = getDaysRemaining(apt.date, normStatus);
+                      const st = statusStyles[normStatus] || statusStyles.PENDING;
+                      return (
+                        <tr key={apt.id} className="hover:bg-sky-50/40 transition-colors">
+                          <td className="py-4 px-5 font-mono font-bold text-sky-700 text-xs">{apt.id}</td>
+                          <td className="py-4 px-5">
+                            <span className="font-bold text-slate-900 text-sm block">{apt.customerName}</span>
+                            <span className="text-xs text-slate-500 font-mono">{apt.phone}</span>
+                          </td>
+                          <td className="py-4 px-5">
+                            <span className="font-bold text-slate-900 block">📅 {apt.date}</span>
+                            <span className="text-xs text-slate-500 font-mono">🕒 {apt.time}</span>
+                            {renderDaysBadge(diff)}
+                          </td>
+                          <td className="py-4 px-5 text-slate-700 font-medium max-w-[220px] truncate">{apt.storeLocation || '5th Ave New York'}</td>
+                          <td className="py-4 px-5 font-bold text-slate-900">{apt.optometrist}</td>
+                          <td className="py-4 px-5 text-center">
+                            {/* Colored badge above the dropdown */}
+                            <span style={{
+                              display:'inline-block', padding:'3px 12px', borderRadius:9999,
+                              fontSize:10, fontWeight:800, letterSpacing:'0.06em',
+                              background: st.bg, color: st.color,
+                              border: `1px solid ${st.border}`, marginBottom:6
+                            }}>
+                              {normStatus}
+                            </span>
+                            {/* Interactive dropdown */}
+                            <select
+                              value={normStatus}
+                              onChange={(e) => handleStatusChange(apt.id, e.target.value)}
+                              style={{
+                                display:'block', width:'100%', padding:'5px 8px',
+                                borderRadius:8, border:'1px solid #cbd5e1',
+                                background:'#f8fafc', color:'#1e293b',
+                                fontSize:11, fontWeight:700, cursor:'pointer',
+                                outline:'none', transition:'border-color 0.2s'
+                              }}
+                            >
+                              <option value="PENDING">PENDING</option>
+                              <option value="CONFIRMED">CONFIRMED</option>
+                              <option value="COMPLETED">COMPLETED</option>
+                              <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </GlassCard>
+          </div>
+        );
+      })()}
 
       {/* ─── TAB 4: ALL CUSTOMER SALES & DEALS ─── */}
       {activeTab === 'deals' && (
@@ -683,6 +997,153 @@ export const AdminDashboard = () => {
               <GlassButton type="submit" size="md" variant="primary" className="w-full shadow-glass-glow">
                 {editingProduct ? 'Update Frame' : 'Create & Publish Frame'}
               </GlassButton>
+            </form>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* ─── ADD NEW STAFF MODAL ─── */}
+      {isStaffModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
+          <GlassCard className="w-full max-w-lg p-6 space-y-4 border border-white bg-white/95 relative shadow-floating">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-xl text-slate-900">
+                    Add New Staff Member
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Create dynamic employee credentials and profile</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsStaffModalOpen(false)}
+                className="p-1 text-slate-500 hover:text-slate-900 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {staffFormError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                {staffFormError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveStaff} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={staffForm.name}
+                    onChange={e => setStaffForm({ ...staffForm, name: e.target.value })}
+                    className="glass-input p-2.5 rounded-xl text-xs w-full font-medium"
+                    placeholder="e.g. Dr. Sarah Connor"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Work Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={staffForm.email}
+                    onChange={e => setStaffForm({ ...staffForm, email: e.target.value })}
+                    className="glass-input p-2.5 rounded-xl text-xs w-full font-medium font-mono"
+                    placeholder="sarah.connor@lumina.design"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Phone Number</label>
+                  <input
+                    type="text"
+                    value={staffForm.phone}
+                    onChange={e => setStaffForm({ ...staffForm, phone: e.target.value })}
+                    className="glass-input p-2.5 rounded-xl text-xs w-full font-medium font-mono"
+                    placeholder="+1 (555) 777-8899"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Role / Position *</label>
+                  <select
+                    value={staffForm.role}
+                    onChange={e => setStaffForm({ ...staffForm, role: e.target.value })}
+                    className="glass-input p-2.5 rounded-xl text-xs w-full bg-white text-slate-800 font-bold"
+                  >
+                    <option value="Senior Optometrist & Style Lead">Senior Optometrist & Style Lead</option>
+                    <option value="Clinical Refraction Specialist">Clinical Refraction Specialist</option>
+                    <option value="Optical Dispenser & Frame Consultant">Optical Dispenser & Frame Consultant</option>
+                    <option value="Lead Eyewear Stylist">Lead Eyewear Stylist</option>
+                    <option value="Boutique Store Manager">Boutique Store Manager</option>
+                    <option value="Optometric Resident">Optometric Resident</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Store Boutique Location</label>
+                <select
+                  value={staffForm.storeLocation}
+                  onChange={e => setStaffForm({ ...staffForm, storeLocation: e.target.value })}
+                  className="glass-input p-2.5 rounded-xl text-xs w-full bg-white text-slate-800 font-bold"
+                >
+                  <option value="Lumina Flagship — 5th Avenue, New York">Lumina Flagship — 5th Avenue, New York</option>
+                  <option value="Lumina Boutique — Ginza, Tokyo">Lumina Boutique — Ginza, Tokyo</option>
+                  <option value="Lumina Atelier — Rue du Faubourg, Paris">Lumina Atelier — Rue du Faubourg, Paris</option>
+                  <option value="Lumina Studio — Bond Street, London">Lumina Studio — Bond Street, London</option>
+                  <option value="Lumina Lab — Bahnhofstrasse, Zurich">Lumina Lab — Bahnhofstrasse, Zurich</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Joined Date</label>
+                  <input
+                    type="date"
+                    value={staffForm.joinedDate}
+                    onChange={e => setStaffForm({ ...staffForm, joinedDate: e.target.value })}
+                    className="glass-input p-2.5 rounded-xl text-xs w-full font-medium font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Avatar Image URL (Optional)</label>
+                  <input
+                    type="url"
+                    value={staffForm.avatar}
+                    onChange={e => setStaffForm({ ...staffForm, avatar: e.target.value })}
+                    className="glass-input p-2.5 rounded-xl text-xs w-full font-medium"
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <GlassButton
+                  type="button"
+                  size="md"
+                  variant="secondary"
+                  onClick={() => setIsStaffModalOpen(false)}
+                  className="w-1/3"
+                >
+                  Cancel
+                </GlassButton>
+                <GlassButton
+                  type="submit"
+                  size="md"
+                  variant="primary"
+                  className="w-2/3 shadow-glass-glow"
+                >
+                  <UserPlus className="w-4 h-4 mr-1.5" />
+                  Create Staff Member
+                </GlassButton>
+              </div>
             </form>
           </GlassCard>
         </div>

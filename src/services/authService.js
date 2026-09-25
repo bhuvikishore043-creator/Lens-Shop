@@ -50,6 +50,29 @@ export const authService = {
     }
 
     const lower = email.toLowerCase();
+
+    // Check if email matches any dynamically created staff member in localStorage
+    try {
+      const storedStaff = JSON.parse(localStorage.getItem('lumina_staff_directory') || '[]');
+      const matchedStaff = storedStaff.find(s => s.email && s.email.toLowerCase() === lower);
+      if (matchedStaff) {
+        const staffUser = {
+          id: matchedStaff.id,
+          name: matchedStaff.name,
+          email: matchedStaff.email,
+          phone: matchedStaff.phone,
+          role: 'staff',
+          roleTitle: matchedStaff.role,
+          storeLocation: matchedStaff.storeLocation,
+          avatar: matchedStaff.avatar
+        };
+        setStorageData(LOCAL_STORAGE_KEYS.CURRENT_USER, staffUser);
+        return Promise.resolve(staffUser);
+      }
+    } catch (e) {
+      // fallback
+    }
+
     let role = preferredRole;
     if (lower.includes('admin') || lower.includes('owner')) role = 'admin';
     else if (lower.includes('staff') || lower.includes('employee') || lower.includes('alex')) role = 'staff';
