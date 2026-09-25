@@ -1,0 +1,86 @@
+[
+  {
+    "id": "lum-01",
+    "name": "Aetherium Titanium Specs",
+    "brand": "Lumina Core",
+    "price": 420.00,
+    "rating": 4.9,
+    "reviewCount": 42,
+    "category": "optical",
+    "gender": "Unisex",
+    "frameMaterial": "Beta Titanium & Japanese Acetate",
+    "lensType": "Anti-Blue Light & Hydrophobic Coating",
+    "colors": [
+      { "name": "Obsidian Cyan", "hex": "#00F0FF" },
+      { "name": "Stealth Black", "hex": "#121212" },
+      { "name": "Hyper Chrome", "hex": "#E2E8F0" }
+    ],
+    "stock": 14,
+    "featured": true,
+    "badge": "Best Seller",
+    "description": "Ultra-lightweight 12g titanium frame featuring precision hand-polished bevel edges and magnetic clip-on sun filters.",
+    "model3d": "/assets/models/glasses_frame_01.glb"
+  },
+  {
+    "id": "lum-02",
+    "name": "CyberVisor Spatial Audio",
+    "brand": "Lumina Tech",
+    "price": 590.00,
+    "rating": 4.8,
+    "reviewCount": 29,
+    "category": "smart",
+    "gender": "Unisex",
+    "frameMaterial": "Aerospace Carbon Fiber",
+    "lensType": "Electrochromic Auto-Tinting",
+    "colors": [
+      { "name": "Void Black", "hex": "#080B10" },
+      { "name": "Neon Cyan", "hex": "#00F0FF" }
+    ],
+    "stock": 8,
+    "featured": true,
+    "badge": "Innovation 2026",
+    "description": "Integrated bone-conduction spatial audio speakers with quad beamforming microphones and 12-hour continuous battery life.",
+    "model3d": "/assets/models/glasses_frame_02.glb"
+  },
+  {
+    "id": "lum-03",
+    "name": "Monolith Bold Acetate",
+    "brand": "Gentle Monster X Lumina",
+    "price": 380.00,
+    "rating": 5.0,
+    "reviewCount": 18,
+    "category": "sunglasses",
+    "gender": "Unisex",
+    "frameMaterial": "Sculpted Italian Bio-Acetate",
+    "lensType": "Zeiss Precision Polarized UV400",
+    "colors": [
+      { "name": "Smoked Quartz", "hex": "#2A2E39" },
+      { "name": "Deep Amber", "hex": "#78350F" }
+    ],
+    "stock": 22,
+    "featured": true,
+    "badge": "Limited Edition",
+    "description": "Architectural thick-bevel silhouette inspired by monolithic modern sculptures. Handcrafted in Milan.",
+    "model3d": "/assets/models/glasses_frame_03.glb"
+  },
+  {
+    "id": "lum-04",
+    "name": "Biometric Retinal Lens Kit",
+    "brand": "Lumina Bio",
+    "price": 280.00,
+    "rating": 4.9,
+    "reviewCount": 65,
+    "category": "lenses",
+    "gender": "Unisex",
+    "frameMaterial": "N/A - Lens Customization",
+    "lensType": "High-Index 1.74 Freeform Digital Progressive",
+    "colors": [
+      { "name": "Clear Optics", "hex": "#FFFFFF" }
+    ],
+    "stock": 50,
+    "featured": false,
+    "badge": "Optometrist Preferred",
+    "description": "Custom ground using high-resolution wavefront retinal mapping to eliminate peripheral distortion entirely.",
+    "model3d": ""
+  }
+]

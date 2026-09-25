@@ -1,0 +1,30 @@
+[
+  {
+    "id": "rev-101",
+    "productId": "lum-01",
+    "author": "Dr. Aris Thorne",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    "rating": 5,
+    "date": "2026-07-28",
+    "isVerifiedBuyer": true,
+    "title": "Unrivaled optical clarity and weightlessness",
+    "comment": "The fit on the titanium frame is flawless. The anti-blue light coating reduces eye strain significantly during long surgical procedures.",
+    "helpfulCount": 24,
+    "userPhotos": [
+      "https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=600&q=80"
+    ]
+  },
+  {
+    "id": "rev-102",
+    "productId": "lum-02",
+    "author": "Sophia Chen",
+    "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80",
+    "rating": 5,
+    "date": "2026-08-02",
+    "isVerifiedBuyer": true,
+    "title": "Feels like wearing glasses from 2035",
+    "comment": "Spatial audio quality on the CyberVisor blew me away. Super discreet sound isolation when I am on conference calls.",
+    "helpfulCount": 19,
+    "userPhotos": []
+  }
+]

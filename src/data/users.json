@@ -1,0 +1,22 @@
+[
+  {
+    "id": "usr-01",
+    "name": "Elena Rostova",
+    "email": "elena@lumina.design",
+    "role": "customer",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    "prescription": {
+      "od": { "sph": "-2.25", "cyl": "-0.50", "axis": "180" },
+      "os": { "sph": "-2.00", "cyl": "-0.75", "axis": "175" },
+      "pd": "63.5"
+    }
+  },
+  {
+    "id": "usr-admin",
+    "name": "Architect Admin",
+    "email": "admin@lumina.design",
+    "role": "admin",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+    "prescription": null
+  }
+]

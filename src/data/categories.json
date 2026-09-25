@@ -1,0 +1,26 @@
+[
+  {
+    "id": "optical",
+    "name": "Optical Frames",
+    "description": "Precision titanium and bio-acetate frames designed for all-day ergonomic prescription wear.",
+    "count": 18
+  },
+  {
+    "id": "sunglasses",
+    "name": "Sun Series",
+    "description": "Architectural eyewear engineered with UV400 polarized Zeiss optics and antireflective interior coatings.",
+    "count": 14
+  },
+  {
+    "id": "smart",
+    "name": "Smart Audio Glass",
+    "description": "Next-gen spatial audio smartwear featuring dual directional speakers and voice assistant AI.",
+    "count": 6
+  },
+  {
+    "id": "lenses",
+    "name": "Biometric Lenses",
+    "description": "Custom freeform optical lenses crafted according to 3D retinal mapping telemetry.",
+    "count": 10
+  }
+]
